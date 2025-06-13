@@ -1,0 +1,3 @@
+# pip install -U g4f[all]
+g4f[all]
+tiktoken
