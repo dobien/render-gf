@@ -1,3 +1,8 @@
+Flask
+
 # pip install -U g4f[all]
+# LegacyLLmArena требует Python 3.11 и-за asyncio.timeout()
 g4f[all]
+
 tiktoken
+gunicorn
