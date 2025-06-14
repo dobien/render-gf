@@ -16,10 +16,54 @@ import time
 
 import json
 
+import traceback
+
 app = Flask(__name__)
 client = Client()
 
 MAX_TOKENS_CONTEXT = 1000000  # пока так, по идее, нужно заменить на словарь
+
+
+import logging
+from logging.config import dictConfig
+
+'''
+Все логи с уровнем INFO и выше будут выводиться в консоль (где запущено приложение).
+Все логи с уровнем ERROR и выше будут записываться в файл error.log.
+'''
+dictConfig({
+    'version': 1,  # версия схемы конфигурации (обязательно 1)
+    
+    'formatters': {  # как форматировать сообщения в логах
+        'default': {
+            'format': '[%(asctime)s] %(levelname)s in %(module)s: %(message)s',
+            # Пример сообщения: [2025-06-15 01:23:45] ERROR in app: Ошибка подключения
+        }
+    },
+    
+    'handlers': {  # куда писать логи
+        'wsgi': {  # обработчик для вывода логов в консоль (stdout/stderr)
+            'class': 'logging.StreamHandler',
+            'stream': 'ext://flask.logging.wsgi_errors_stream',  # поток ошибок Flask
+            'formatter': 'default'  # использовать формат из formatters.default
+        },
+        'file': {  # обработчик для записи логов в файл
+            'class': 'logging.FileHandler',
+            'filename': 'error.log',  # имя файла для логов
+            'formatter': 'default',
+            'level': 'ERROR',  # записывать только ошибки и выше (ERROR, CRITICAL)
+        }
+    },
+    
+    'root': {  # корневой логгер (главный)
+        'level': 'INFO',  # минимальный уровень логирования (INFO и выше)
+        'handlers': ['wsgi', 'file']  # использовать оба обработчика: в консоль и в файл
+    }
+})
+
+with open('error.log', 'w'):
+    pass  # файл будет очищен (обрезан до 0 байт)
+
 
 def count_tokens(messages, model="gpt-4o-mini"):
     try:
@@ -185,6 +229,7 @@ def chat_completions():
     except Exception as e:
         # Для отладки можно выводить больше информации об ошибке
         print(f"Error in chat_completions: {e}", exc_info=True)
+        app.logger.error(f"Error in chat_completions: {e}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 
@@ -255,6 +300,7 @@ def completions():
 
     except Exception as e:
         print(f"Error in completions: {e}", exc_info=True)
+        app.logger.error(f"Error in chat_completions: {e}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
 
 
