@@ -38,7 +38,7 @@ app = Flask(__name__)
 #             Он заставляет ProxyFix искать заголовок X-Forwarded-Prefix
 #             (или аналогичные, которые может добавить прокси) и
 #             использовать его для установки request.script_root.
-app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1, x_proto=1, x_prefix=1)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1, x_proto=1, x_prefix=1, x_port=1)
 
 client = Client()
 
