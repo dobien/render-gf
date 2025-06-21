@@ -203,7 +203,7 @@
             // Используем динамически переданный URL из Flask
             const generateImagesEndpoint = "{{ generate_images_url }}"; // <--- Изменено
 
-            console.log(`Fetching from endpoint: ${generateImagesEndpoint}`); // <--- Добавлено
+            console.log(`Fetching from endpoint : ${generateImagesEndpoint}`); // <--- Добавлено
 
             fetch(generateImagesEndpoint, {
                 method: 'POST',
