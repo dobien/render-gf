@@ -38,11 +38,11 @@ try:
     with open(SETTINGS_FILE, 'r') as f:
         app.config.update(json.load(f))
 except FileNotFoundError:
-    print(f"Предупреждение: Файл настроек '{SETTINGS_FILE}' не найден. Используются настройки по умолчанию.")
+    app.logger.info(f"Предупреждение: Файл настроек '{SETTINGS_FILE}' не найден. Используются настройки по умолчанию.")
     # Установите настройки по умолчанию, если файл не найден
     app.config['DEBUG'] = False
 except json.JSONDecodeError:
-    print(f"Ошибка: Некорректный формат JSON в файле '{SETTINGS_FILE}'. Используются настройки по умолчанию.")
+    app.logger.info(f"Ошибка: Некорректный формат JSON в файле '{SETTINGS_FILE}'. Используются настройки по умолчанию.")
     app.config['DEBUG'] = False
 
 
@@ -243,7 +243,7 @@ def chat_completions():
                         yield f"data: {chunk.model_dump_json(exclude_unset=True)}\n\n"
                     except Exception as e:
                         # Логирование ошибок при обработке чанка, но не прерываем поток
-                        print(f"Error processing chunk: {e}")
+                        app.logger.info(f"Error processing chunk: {e}")
                         continue
 
                 # Сигнал [DONE] должен быть отправлен как отдельная строка.
@@ -283,7 +283,7 @@ def chat_completions():
             })
     except Exception as e:
         # Для отладки можно выводить больше информации об ошибке
-        print(f"Error in chat_completions: {e}", exc_info=True)
+        app.logger.info(f"Error in chat_completions: {e}", exc_info=True)
         app.logger.error(
             f"Error in chat_completions: {e}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
@@ -364,7 +364,7 @@ def completions():
         return jsonify(result)
 
     except Exception as e:
-        print(f"Error in completions: {e}", exc_info=True)
+        app.logger.info(f"Error in completions: {e}", exc_info=True)
         app.logger.error(
             f"Error in chat_completions: {e}\n{traceback.format_exc()}")
         return jsonify({"error": str(e)}), 500
@@ -383,11 +383,11 @@ def load_cookies(file_path):
             # Удаляем пустые значения куки
             return {k: v for k, v in cookies.items() if v}
     except FileNotFoundError:
-        print(f"Файл не найден: {full_file_path}"
+        app.logger.info(f"Файл не найден: {full_file_path}"
               )  # Выводим полный путь для отладки
         return {}
     except json.JSONDecodeError:
-        print(f"Ошибка декодирования JSON в файле: {full_file_path}")
+        app.logger.info(f"Ошибка декодирования JSON в файле: {full_file_path}")
         return {}
 
 
@@ -411,8 +411,8 @@ def images():
     # url_for(_external=True) сгенерирует полный URL, автоматически включая
     # request.script_root, если он установлен.
     generate_images_url = url_for('generate_images', _external=True)
-    print(f"generate_images_url: {generate_images_url}")
-    
+    app.logger.info(f"generate_images_url: {generate_images_url}")
+
     return render_template(
         'index.html',
         image_urls=image_urls,
@@ -451,7 +451,7 @@ def generate_images():
             error_message = "Коммандер, введи промпт!"
     except Exception as e:
         error_message = f"Произошла ошибка: {str(e)}"
-        print(f"Ошибка при генерации изображения: {e}")
+        app.logger.info(f"Ошибка при генерации изображения: {e}")
     finally:
         # Важно: закрываем сессию BingArt после использования
         local_bing_art.close_session()
