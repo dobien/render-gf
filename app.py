@@ -13,6 +13,8 @@ from logging.config import dictConfig
 # Existing Flask imports, now including render_template for the image generation part
 from flask import Flask, Response, request, jsonify, session, render_template, url_for
 
+from werkzeug.middleware.proxy_fix import ProxyFix  # Импортируем ProxyFix
+
 # G4F client imports
 from g4f import Provider as Providers
 from g4f.client import Client
@@ -27,6 +29,17 @@ import json
 import traceback
 
 app = Flask(__name__)
+
+# Применяем ProxyFix к WSGI-приложению Flask.
+# x_for=1: Обрабатывает X-Forwarded-For (IP клиента)
+# x_host=1: Обрабатывает X-Forwarded-Host (оригинальный Host)
+# x_proto=1: Обрабатывает X-Forwarded-Proto (HTTP/HTTPS)
+# x_prefix=1: САМЫЙ ВАЖНЫЙ ПАРАМЕТР ДЛЯ ВАШЕГО СЛУЧАЯ.
+#             Он заставляет ProxyFix искать заголовок X-Forwarded-Prefix
+#             (или аналогичные, которые может добавить прокси) и
+#             использовать его для установки request.script_root.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_host=1, x_proto=1, x_prefix=1)
+
 client = Client()
 
 MAX_TOKENS_CONTEXT = 1000000  # пока так, по идее, нужно заменить на словарь
@@ -348,13 +361,14 @@ def load_cookies(file_path):
         # Полный путь к файлу куки
         script_dir = os.path.dirname(__file__)
         full_file_path = os.path.join(script_dir, file_path)
-        
+
         with open(full_file_path, 'r') as f:
             cookies = json.load(f)
             # Удаляем пустые значения куки
             return {k: v for k, v in cookies.items() if v}
     except FileNotFoundError:
-        print(f"Файл не найден: {full_file_path}") # Выводим полный путь для отладки
+        print(f"Файл не найден: {full_file_path}"
+              )  # Выводим полный путь для отладки
         return {}
     except json.JSONDecodeError:
         print(f"Ошибка декодирования JSON в файле: {full_file_path}")
@@ -377,13 +391,16 @@ def images():
     image_urls = session.get('image_urls', [])
     error_message = session.get('error_message', None)
     session.pop('error_message', None)
-    # Передаем динамически сгенерированный URL для generate_images в шаблон
-    generate_images_url = url_for('generate_images')
-    return render_template('index.html',
-                           image_urls=image_urls,
-                           prompt=prompt,
-                           error_message=error_message,
-                           generate_images_url=generate_images_url) # <--- Добавлено
+
+    # url_for(_external=True) сгенерирует полный URL, автоматически включая
+    # request.script_root, если он установлен.
+    generate_images_url = url_for('generate_images', _external=True)
+    return render_template(
+        'index.html',
+        image_urls=image_urls,
+        prompt=prompt,
+        error_message=error_message,
+        generate_images_url=generate_images_url)  # <--- Добавлено
 
 
 @app.route('/generate-images', methods=['POST'])
