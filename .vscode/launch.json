@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Current File (Debug into libraries)",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": false, // ✨ ВОТ ЭТОТ ПАРАМЕТР! ✨ Теперь дебаггер пойдёт в каждую щель!
+            "cwd": "${workspaceFolder}/generate-image" // 🚀 Убедись, что это путь к твоему проекту!
+        }
+    ]
+}

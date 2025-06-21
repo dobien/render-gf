@@ -2,7 +2,11 @@ Flask
 
 # pip install -U g4f[all]
 # LegacyLLmArena требует Python 3.11 и-за asyncio.timeout()
-g4f[all]
+g4f[all]==0.5.5.5
+# another wrapper for bing
+bingart
 
 tiktoken
 gunicorn
+
+numpy==1.26.4 # Добавлено ограничение на версию numpy

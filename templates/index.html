@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mass Effect Image Forge</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+
+        body {
+            background-color: #0b0f16; /* Темный фон, как космос */
+            color: #d1d8e0; /* Светлый текст */
+            font-family: 'Orbitron', sans-serif; /* Футуристический шрифт */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background-color: #1a1e27; /* Темный контейнер */
+            border: 2px solid #007bff; /* Яркая синяя рамка */
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 0 20px rgba(0, 123, 255, 0.5); /* Синее свечение */
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #007bff;
+            text-shadow: 0 0 8px rgba(0, 123, 255, 0.7);
+            margin-bottom: 30px;
+            font-size: 2.2em;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #a0c0e0;
+        }
+
+        input[type="text"],
+        select {
+            background-color: #0f121a;
+            color: #d1d8e0;
+            border: 1px solid #0056b3;
+            border-radius: 5px;
+            padding: 12px;
+            font-size: 1em;
+            width: calc(100% - 24px); /* Учитываем padding */
+            box-sizing: border-box;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        input[type="file"] {
+            background-color: #0f121a;
+            color: #d1d8e0;
+            border: 1px solid #0056b3;
+            border-radius: 5px;
+            padding: 12px;
+            font-size: 1em;
+            width: calc(100% - 24px);
+            box-sizing: border-box;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 15px 25px;
+            font-size: 1.2em;
+            font-family: 'Orbitron', sans-serif;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 0 10px rgba(0, 123, 255, 0.5);
+        }
+
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed #0056b3;
+            text-align: center;
+        }
+
+        .result-section img {
+            max-width: 100%;
+            height: auto;
+            border: 3px solid #007bff;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.7);
+        }
+
+        .result-section p {
+            word-break: break-all; /* Для длинных URL */
+            color: #a0c0e0;
+        }
+
+        .error-message {
+            color: #dc3545; /* Красный для ошибок, как сигнал тревоги */
+            background-color: #3b0f14;
+            border: 1px solid #dc3545;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr); /* 2 колонки */
+            gap: 15px 20px; /* Отступы между изображениями */
+            margin-top: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Mass Effect Image Forge 🌌</h1>
+
+        <form id="imageForm" action="/generate-images" method="post">
+            <label for="prompt">Опиши, что тебе нужно изобразить, коммандер:</label>
+
+            <textarea id="prompt" name="prompt" placeholder="Например: Броня N7 в стиле киберпанк"
+                    onkeydown="return handleEnter(event)" oninput="updatePromptLength()"
+                    style="resize: vertical; font-family: 'Orbitron', sans-serif; width: 100%;
+                            padding: 12px; box-sizing: border-box; background-color: #0f121a; color: #d1d8e0;
+                            border: 1px solid #0056b3; border-radius: 5px; font-size: 1em; display: block; height: 150px;">{{ prompt }}</textarea>
+            <div style="text-align: right; color: #a0c0e0; font-size: 0.8em; margin-top: -10px;">
+                Длина промпта: <span id="promptLength">0</span>
+            </div>
+
+            <button type="button" onclick="generateImages()">Deploy Mission! 🚀</button>
+            <div id="loadingIndicator" style="display:none; color: #a0c0e0; margin-top: 10px;">
+                Запрос обрабатывается бортовым компьютером... Ожидайте, коммандер...
+            </div>
+        </form>
+
+        <div class="result-section" {% if not image_urls %} style="display: none;" {% endif %}>
+            <h2>Получены файлы с Нормандии:</h2>
+            <div class="image-grid">
+                {% for url in image_urls %}
+                    <a href="{{ url }}" target="_blank">
+                        <img src="{{ url }}" alt="Сгенерированное изображение">
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if error_message %}
+            <div class="error-message">
+                <h2>Внимание, коммандер!</h2>
+                <p>{{ error_message }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function handleEnter(event) {
+            if (event.key === "Enter") {
+                event.preventDefault();
+                const textarea = document.getElementById("prompt");
+                textarea.value += "\n";
+                textarea.scrollTop = textarea.scrollHeight; // Прокрутка к низу
+                updatePromptLength(); // Обновляем длину промпта
+                return false;
+            }
+            return true;
+        }
+
+        function updatePromptLength() {
+            const textarea = document.getElementById("prompt");
+            const length = textarea.value.length;
+            document.getElementById("promptLength").innerText = length;
+        }
+
+        function generateImages() {
+            const form = document.getElementById('imageForm');
+            const formData = new FormData(form);
+            const loadingIndicator = document.getElementById('loadingIndicator'); // Получаем индикатор загрузки
+
+            loadingIndicator.style.display = 'block'; // Показываем индикатор загрузки
+
+            fetch('/generate-images', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    // Обработка ошибки
+                    document.querySelector('.error-message p').textContent = data.error;
+                    document.querySelector('.error-message').style.display = 'block';
+                    document.querySelector('.result-section').style.display = 'none';
+                } else {
+                    // Обновление изображений на странице
+                    const imageGrid = document.querySelector('.image-grid');
+                    imageGrid.innerHTML = ''; // Очищаем старые изображения
+
+                    data.image_urls.forEach(url => {
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.target = '_blank';
+
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Сгенерированное изображение';
+
+                        a.appendChild(img);
+                        imageGrid.appendChild(a);
+                    });
+
+                    document.querySelector('.result-section').style.display = 'block';
+                    document.querySelector('.error-message').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                console.error('Ошибка:', error);
+                document.querySelector('.error-message p').textContent = "Произошла ошибка при выполнении запроса.";
+                document.querySelector('.error-message').style.display = 'block';
+                document.querySelector('.result-section').style.display = 'none';
+            })
+            .finally(() => {
+                loadingIndicator.style.display = 'none'; // Скрываем индикатор загрузки в любом случае
+            });
+        }
+
+        window.onload = function() {
+            updatePromptLength(); // Обновляем длину промпта при загрузке страницы
+        };
+    </script>
+</body>
+</html>
