@@ -411,12 +411,14 @@ def images():
     # url_for(_external=True) сгенерирует полный URL, автоматически включая
     # request.script_root, если он установлен.
     generate_images_url = url_for('generate_images', _external=True)
+    print(f"generate_images_url: {generate_images_url}")
+    
     return render_template(
         'index.html',
         image_urls=image_urls,
         prompt=prompt,
         error_message=error_message,
-        generate_images_url=generate_images_url)  # <--- Добавлено
+        generate_images_url=generate_images_url)
 
 
 @app.route('/generate-images', methods=['POST'])
