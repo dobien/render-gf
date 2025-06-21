@@ -11,7 +11,7 @@ import logging
 from logging.config import dictConfig
 
 # Existing Flask imports, now including render_template for the image generation part
-from flask import Flask, Response, request, jsonify, session, render_template
+from flask import Flask, Response, request, jsonify, session, render_template, url_for
 
 # G4F client imports
 from g4f import Provider as Providers
@@ -377,10 +377,13 @@ def images():
     image_urls = session.get('image_urls', [])
     error_message = session.get('error_message', None)
     session.pop('error_message', None)
+    # Передаем динамически сгенерированный URL для generate_images в шаблон
+    generate_images_url = url_for('generate_images')
     return render_template('index.html',
                            image_urls=image_urls,
                            prompt=prompt,
-                           error_message=error_message)
+                           error_message=error_message,
+                           generate_images_url=generate_images_url) # <--- Добавлено
 
 
 @app.route('/generate-images', methods=['POST'])

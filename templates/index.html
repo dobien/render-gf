@@ -200,7 +200,12 @@
 
             loadingIndicator.style.display = 'block'; // Показываем индикатор загрузки
 
-            fetch('/generate-images', {
+            // Используем динамически переданный URL из Flask
+            const generateImagesEndpoint = "{{ generate_images_url }}"; // <--- Изменено
+
+            console.log(`Fetching from endpoint: ${generateImagesEndpoint}`); // <--- Добавлено
+
+            fetch(generateImagesEndpoint, {
                 method: 'POST',
                 body: formData
             })
