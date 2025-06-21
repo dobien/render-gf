@@ -30,6 +30,22 @@ import traceback
 
 app = Flask(__name__)
 
+# Определяем путь к файлу настроек
+SETTINGS_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'settings.json')
+
+# Загружаем настройки из settings.json
+try:
+    with open(SETTINGS_FILE, 'r') as f:
+        app.config.update(json.load(f))
+except FileNotFoundError:
+    print(f"Предупреждение: Файл настроек '{SETTINGS_FILE}' не найден. Используются настройки по умолчанию.")
+    # Установите настройки по умолчанию, если файл не найден
+    app.config['DEBUG'] = False
+except json.JSONDecodeError:
+    print(f"Ошибка: Некорректный формат JSON в файле '{SETTINGS_FILE}'. Используются настройки по умолчанию.")
+    app.config['DEBUG'] = False
+
+
 # Применяем ProxyFix к WSGI-приложению Flask.
 # x_for=1: Обрабатывает X-Forwarded-For (IP клиента)
 # x_host=1: Обрабатывает X-Forwarded-Host (оригинальный Host)
