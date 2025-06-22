@@ -403,11 +403,11 @@ def images():
         generate_images_url=generate_images_url)  # <--- Добавлено
 
 
-@app.route('/generate-images', methods=['POST'])
-def generate_images():
-    """Генерация изображений с использованием bingart."""
-    prompt = request.form.get('prompt')
-    session['prompt'] = prompt
+def _process_image_generation(prompt: str):
+    """
+    Вспомогательная функция для обработки логики генерации изображений.
+    Возвращает кортеж (image_urls, error_message).
+    """
     image_urls = []
     error_message = None
 
@@ -423,6 +423,7 @@ def generate_images():
         if prompt:
             results = local_bing_art.generate_images(prompt)
             if results and 'images' in results:
+                # Фильтруем и обрезаем до 4 изображений
                 image_urls = [
                     img['url'] for i, img in enumerate(results['images'])
                     if i % 2 == 0
@@ -433,10 +434,29 @@ def generate_images():
             error_message = "Коммандер, введи промпт!"
     except Exception as e:
         error_message = f"Произошла ошибка: {str(e)}"
-        print(f"Ошибка при генерации изображения: {e}")
+        app.logger.error(f"Ошибка при генерации изображения: {e}",
+                         exc_info=True)
     finally:
         # Важно: закрываем сессию BingArt после использования
         local_bing_art.close_session()
+
+    return image_urls, error_message
+
+
+@app.route('/generate-images', methods=['GET', 'POST'])
+def generate_images():
+    """
+    Генерация изображений с использованием bingart.
+    Поддерживает как POST (form data), так и GET (query parameter) запросы.
+    """
+    if request.method == 'POST':
+        prompt = request.form.get('prompt')
+    else:  # GET request
+        prompt = request.args.get('prompt')
+
+    session['prompt'] = prompt  # Сохраняем промпт в сессии
+
+    image_urls, error_message = _process_image_generation(prompt)
 
     if error_message:
         session['error_message'] = error_message
