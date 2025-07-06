@@ -402,6 +402,27 @@ def images():
         error_message=error_message,
         generate_images_url=generate_images_url)  # <--- Добавлено
 
+@app.route('/generate-images', methods=['GET', 'POST'])
+def generate_images():
+    """
+    Генерация изображений с использованием bingart.
+    Поддерживает как POST (form data), так и GET (query parameter) запросы.
+    """
+    if request.method == 'POST':
+        prompt = request.form.get('prompt')
+    else:  # GET request
+        prompt = request.args.get('prompt')
+
+    session['prompt'] = prompt  # Сохраняем промпт в сессии
+
+    image_urls, error_message = _process_image_generation(prompt)
+
+    if error_message:
+        session['error_message'] = error_message
+        return jsonify({'error': error_message}), 500
+
+    session['image_urls'] = image_urls
+    return jsonify({'image_urls': image_urls})
 
 def _process_image_generation(prompt: str):
     """
@@ -443,30 +464,32 @@ def _process_image_generation(prompt: str):
     return image_urls, error_message
 
 
-@app.route('/generate-images', methods=['GET', 'POST'])
-def generate_images():
-    """
-    Генерация изображений с использованием bingart.
-    Поддерживает как POST (form data), так и GET (query parameter) запросы.
-    """
-    if request.method == 'POST':
-        prompt = request.form.get('prompt')
-    else:  # GET request
-        prompt = request.args.get('prompt')
+# hack
+import re
+import time
+from urllib.parse import urlencode
+from bingart import PromptRejectedError
 
-    session['prompt'] = prompt  # Сохраняем промпт в сессии
+def generate_images(self, query):
+    encoded_query = urlencode({'q': query})
+    self.session.headers.update(self.headers)
+    coins = self._get_balance()
+    rt = '4' if coins > 0 else '3'
+    creation_url = f'{self.base_url}?{encoded_query}&rt={rt}&FORM=GENCRE'
 
-    image_urls, error_message = _process_image_generation(prompt)
+    response = self.session.post(creation_url, data={'q': query})
+    try:
+        ID = re.search(';requestId=([^"]+)"', response.text).group(1)
+        IG = re.search('IG:"([^"]+)"', response.text).group(1)
+    except AttributeError:
+        raise PromptRejectedError('Error! Your prompt has been rejected for ethical reasons.')
 
-    if error_message:
-        session['error_message'] = error_message
-        return jsonify({'error': error_message}), 500
+    images = self._fetch_images(encoded_query, ID, IG)
+    return {'images': images, 'prompt': query}
 
-    session['image_urls'] = image_urls
-    return jsonify({'image_urls': image_urls})
+BingArt.generate_images = generate_images
 
 
 if __name__ == "__main__":
-    #app.run(port=3003, debug=True)
     port = int(os.environ.get("PORT", 3003))
     app.run(host="0.0.0.0", port=port)
